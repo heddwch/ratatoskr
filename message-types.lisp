@@ -1,13 +1,24 @@
 (in-package :ratatoskr)
 
-(defstruct message
+(defstruct prefix
   nick
   user
-  host
-  prefix
-  params)
+  host)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
+(defclass message ()
+  ((prefix :accessor prefix :initarg :prefix)
+   (params :accessor params :initarg :params)))
+
+(defmethod print-object ((object message) stream)
+  (print `(make-instance ',(class-name (class-of object))
+			 ,@(if (slot-boundp object 'prefix)
+			       `(:prefix ',(slot-value object 'prefix))
+			       nil)
+			 ,@(if (slot-boundp object 'params)
+			       `(:params ',(slot-value object 'params))
+			       nil)) stream))
+
+(eval-when (:compile-toplevel :load-toplevel)
   (defconstant +messages+
     '(PASS
       NICK
@@ -180,7 +191,6 @@
       (ERR-YOUWILLBEBANNED . "466")
       (ERR-BADCHANMASK . "476")
       (ERR-NOSERVICEHOST . "492")))
-  (defvar *command-map* (make-hash-table :test 'equalp :size (list-length +messages+)))
   (defun init-message-type (msg)
     (let (type-sym command-string)
       (typecase msg
@@ -188,12 +198,16 @@
 		(setf type-sym (intern (concatenate 'string "CMD-" command-string))))
 	(cons (setf type-sym (car msg))
 	      (setf command-string (cdr msg))))
-      `((defstruct (,type-sym
-		     (:include message)))
-	(setf (gethash ,command-string *command-map*) (find-class ',type-sym))))))
+      `((defclass ,type-sym (message) ())
+	(setf (gethash ,command-string *command-map*) (find-class ',type-sym))
+	(export ',type-sym)))))
 
+(defvar *command-map* (make-hash-table :test 'equalp :size (list-length +messages+)))
+  
 (defmacro init-message-types (type-list)
-  `(progn ,@(mapcan #'init-message-type type-list)))
+    `(progn ,@(mapcan #'init-message-type type-list)))
 
 (init-message-types #.+messages+)
+
+
 

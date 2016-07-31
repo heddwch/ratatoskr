@@ -11,4 +11,5 @@
 	       #:solipsism
 	       #:bordeaux-threads)
   :components ((:file "package")
-	       (:file "message" :depends-on ("package"))))
+	       (:file "message-types" :depends-on ("package"))
+	       (:file "message-constructors" :depends-on ("message-types"))))

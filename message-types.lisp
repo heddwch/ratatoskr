@@ -7,16 +7,18 @@
 
 (defclass message ()
   ((prefix :accessor prefix :initarg :prefix)
-   (params :accessor params :initarg :params)))
+   (params :accessor params :initarg :params)
+   (trailing :accessor trailing :initarg :trailing)))
 
 (defmethod print-object ((object message) stream)
   (print `(make-instance ',(class-name (class-of object))
-			 ,@(if (slot-boundp object 'prefix)
-			       `(:prefix ',(slot-value object 'prefix))
-			       nil)
-			 ,@(if (slot-boundp object 'params)
-			       `(:params ',(slot-value object 'params))
-			       nil)) stream))
+			 ,@(when (slot-boundp object 'prefix)
+				 `(:prefix ',(prefix object)))
+			 ,@(when (slot-boundp object 'params)
+				 `(:params ',(params object)))
+			 ,@(when (slot-boundp object 'trailing)
+				 `(:trailing ',(trailing object))))
+	 stream))
 
 (eval-when (:compile-toplevel :load-toplevel)
   (defconstant +messages+

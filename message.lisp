@@ -8,7 +8,7 @@
   params)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defconstant *messages*
+  (defconstant +messages+
     '(PASS
       NICK
       USER
@@ -162,7 +162,7 @@
       (RPL-LUSERME . "255")
       (RPL-ADMINME . "256")
       (RPL-ADMINLOC1 . "257")
-      (RPL-ADMINLOC2 , "258")
+      (RPL-ADMINLOC2 . "258")
       (RPL-ADMINEMAIL . "259")
       (RPL-TRACECLASS . "209")
       (RPL-STATSQLINE . "217")
@@ -180,6 +180,20 @@
       (ERR-YOUWILLBEBANNED . "466")
       (ERR-BADCHANMASK . "476")
       (ERR-NOSERVICEHOST . "492")))
-  )
-(defun parse-message)
+  (defvar *command-map* (make-hash-table :test 'equalp :size (list-length +messages+)))
+  (defun init-message-type (msg)
+    (let (type-sym command-string)
+      (typecase msg
+	(symbol (setf command-string (symbol-name msg))
+		(setf type-sym (intern (concatenate 'string "CMD-" command-string))))
+	(cons (setf type-sym (car msg))
+	      (setf command-string (cdr msg))))
+      `((defstruct (,type-sym
+		     (:include message)))
+	(setf (gethash ,command-string *command-map*) (find-class ',type-sym))))))
+
+(defmacro init-message-types (type-list)
+  `(progn ,@(mapcan #'init-message-type type-list)))
+
+(init-message-types #.+messages+)
 

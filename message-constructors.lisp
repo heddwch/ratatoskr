@@ -65,9 +65,8 @@
    (type (or prefix null) prefix))
   (let (channel-string key-string)
     (when *targets-per-message*
-      (setf channel-plist (subseq channel-plist 0 (if (< (list-length channel-plist) *targets-per-message*)
-						      (list-length channel-plist)
-						      *targets-per-message*))))
+      (setf channel-plist (subseq channel-plist 0 (min *targets-per-message*
+						       (list-length channel-plist)))))
     (let (with-keys without-keys)
       (mapcar (lambda (channel-pair)
 		(let ((key (cdr channel-pair)))

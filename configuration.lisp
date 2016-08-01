@@ -3,5 +3,5 @@
 (defconstant +max-targets+ 20)
 (defvar *targets-per-message* 4)
 (proclaim
- `(type (integer 1 ,+max-targets+) *targets-per-message*))
+ `(type (or (integer 1 ,+max-targets+) null) *targets-per-message*))
 

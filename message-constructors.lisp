@@ -9,7 +9,7 @@
 
 (defun sort-params-first (list &key stack-predicate stack-key)
   (let (with-param without-param)
-    (mapcar (lambda (pair)
+    (mapc (lambda (pair)
 	      (if (cdr pair)
 		  (push pair with-param)
 		  (push pair without-param)))
@@ -84,7 +84,7 @@
    (type (or prefix null) prefix))
   (let (channel-string key-string)
     (setf channel-plist (sort-params-first (limit-params channel-plist)))
-    (mapcar (lambda (channel-pair)
+    (mapc (lambda (channel-pair)
 	      (let ((channel (car channel-pair))
 		    (key (cdr channel-pair)))
 		(setf channel-string
@@ -134,21 +134,20 @@
 	 (grant (not (mode-grant (caar mode-plist))))
 	 mode-string
 	 params)
-    (mapcar
-     (lambda (pair)
-       (let ((new-grant (mode-grant (car pair))))
-	 (when (not (equalp grant new-grant))
-	   (setf mode-string
-		 (concatenate 'string
-			      mode-string
-			      (if new-grant "+" "-")))
-	   (setf grant new-grant)))
-       (setf mode-string
-	     (concatenate 'string
-			  mode-string
-			  (mode-mode (car pair))))
-       (push (cdr pair) params))
-     mode-plist)
+    (mapc (lambda (pair)
+	    (let ((new-grant (mode-grant (car pair))))
+	      (when (not (equalp grant new-grant))
+		(setf mode-string
+		      (concatenate 'string
+				   mode-string
+				   (if new-grant "+" "-")))
+		(setf grant new-grant)))
+	    (setf mode-string
+		  (concatenate 'string
+			       mode-string
+			       (mode-mode (car pair))))
+	    (push (cdr pair)params))
+	  mode-plist)
     (make-instance 'cmd-mode
 		   :prefix prefix
 		   :params (append (list target mode-string)
@@ -170,13 +169,13 @@
    (type (or prefix null) prefix))
   (let (channel-string)
     (when channels
-      (mapcar (lambda (channel)
-		(when channel
-		  (setf channel-string
-			(concatenate 'string
-				     channel-string
-				     (when channel-string ",")
-				     channel))))
+      (mapc (lambda (channel)
+	      (when channel
+		(setf channel-string
+		      (concatenate 'string
+				   channel-string
+				   (when channel-string ",")
+				   channel))))
 	      (limit-params channels)))
     (make-instance 'cmd-names
 		   :prefix prefix

@@ -195,7 +195,7 @@
       (ERR-NOSERVICEHOST . "492")))
   (defun init-message-type (msg)
     (let (type-sym command-string)
-      (typecase msg
+      (etypecase msg
 	(symbol (setf command-string (symbol-name msg))
 		(setf type-sym (intern (concatenate 'string "CMD-" command-string))))
 	(cons (setf type-sym (car msg))

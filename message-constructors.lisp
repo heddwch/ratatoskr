@@ -223,3 +223,96 @@
 		 :prefix prefix
 		 :params (list channel user)
 		 :trailing comment))
+
+(defun cmd-version (&key server prefix)
+  (declare
+   (type (or string null) server)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-version
+		 :prefix prefix
+		 :params (when server
+			   (list server))))
+
+(defun cmd-stats (query &key server prefix)
+  (declare
+   (type character query)
+   (type (or string null) server)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-stats
+		 :prefix prefix
+		 :params (append (list query)
+				 (when server (list server)))))
+
+(defun cmd-links (&key server server-mask prefix)
+  (declare
+   (type (or string null) server server-mask)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-links
+		 :prefix prefix
+		 :params (append (when server (list server))
+				 (when server-mask (list server-mask)))))
+
+(defun cmd-time (&key server-mask prefix)
+  (declare
+   (type (or string null) server-mask)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-time
+		 :prefix prefix
+		 :params (when server-mask (list server-mask))))
+
+(defun cmd-connect (server &key port remote prefix)
+  (declare
+   (type string server)
+   (type (or string number null) port)
+   (type (or string null) remote)
+   (type (or prefix null) prefix))
+  (when remote
+    (unless port
+      (error 'malformed-message)))
+  (make-instance 'cmd-connect
+		 :prefix prefix
+		 :params (append (list server)
+				 (when port (list port))
+				 (when remote (list remote)))))
+
+(defun cmd-trace (&key server-mask prefix)
+  (declare
+   (type (or string null) server-mask)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-trace
+		 :prefix prefix
+		 :params (when server-mask (list server-mask))))
+
+(defun cmd-admin (&key server-mask prefix)
+  (declare
+   (type (or string null) server-mask)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-admin
+		 :prefix prefix
+		 :params (when server-mask (list server-mask))))
+
+(defun cmd-info (&key server-mask prefix)
+  (declare
+   (type (or string null) server-mask)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-info
+		 :prefix prefix
+		 :params (when server-mask (list server-mask))))
+
+(defun cmd-privmsg (recipients message &key prefix)
+  (declare
+   (type list recipients)
+   (type string message)
+   (type (or prefix null) prefix))
+  (let (recipient-string)
+    (mapc (lambda (recipient)
+	    (setf recipient-string
+		  (concatenate 'string
+			       recipient-string
+			       (when recipient-string ",")
+			       recipient)))
+	  recipients)
+    (make-instance 'cmd-privmsg
+		   :prefix prefix
+		   :params (list recipient-string)
+		   :trailing message)))

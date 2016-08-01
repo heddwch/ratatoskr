@@ -12,5 +12,6 @@
 	       #:bordeaux-threads)
   :components ((:file "package")
 	       (:file "message-types" :depends-on ("package"))
-	       (:file "configuration" :depends-on ("package" "message-types"))
+	       (:file "misc-types" :depends-on ("package"))
+	       (:file "configuration" :depends-on ("package" "message-types" "misc-types"))
 	       (:file "message-constructors" :depends-on ("message-types" "configuration"))))

@@ -1,26 +1,6 @@
 (in-package :ratatoskr)
 
-(defstruct prefix
-  nick
-  user
-  host)
-
-(defclass message ()
-  ((prefix :accessor prefix :initarg :prefix)
-   (params :accessor params :initarg :params)
-   (trailing :accessor trailing :initarg :trailing)))
-
-(defmethod print-object ((object message) stream)
-  (print `(make-instance ',(class-name (class-of object))
-			 ,@(when (slot-boundp object 'prefix)
-				 `(:prefix ',(prefix object)))
-			 ,@(when (slot-boundp object 'params)
-				 `(:params ',(params object)))
-			 ,@(when (slot-boundp object 'trailing)
-				 `(:trailing ',(trailing object))))
-	 stream))
-
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel)
   (defconstant +messages+
     '(PASS
       NICK
@@ -201,15 +181,56 @@
 	(cons (setf type-sym (car msg))
 	      (setf command-string (cdr msg))))
       `((defclass ,type-sym (message) ())
-	(setf (gethash ,command-string *command-map*) (find-class ',type-sym))
+	(setf (command-mapping ,command-string) (find-class ',type-sym))
+	(setf (command-mapping (find-class ',type-sym)) ,command-string)
 	(export ',type-sym)))))
 
-(defvar *command-map* (make-hash-table :test 'equalp :size (list-length +messages+)))
+(defstruct prefix
+  nick
+  user
+  host)
+
+(defclass message ()
+  ((prefix :accessor prefix :initarg :prefix)
+   (params :accessor params :initarg :params)
+   (trailing :accessor trailing :initarg :trailing)))
+
+(defmethod print-object ((object message) stream)
+  (print `(make-instance ',(class-name (class-of object))
+			 ,@(when (slot-boundp object 'prefix)
+				 `(:prefix ',(prefix object)))
+			 ,@(when (slot-boundp object 'params)
+				 `(:params ',(params object)))
+			 ,@(when (slot-boundp object 'trailing)
+				 `(:trailing ',(trailing object))))
+	 stream))
+
+(defstruct mode grant mode)
+
+(defclass command-map ()
+  ((line-to-command :initform (make-hash-table :test 'equalp :size (list-length +messages+)))
+   (command-to-line :initform (make-hash-table :test 'eq :size (list-length +messages+)))))
+(defgeneric command-mapping (key)
+  (:method ((key string))
+    (gethash key (slot-value *command-map* 'line-to-command)))
+  (:method ((key class))
+    (unless (subtypep key (find-class 'message))
+      (error 'type-error :datum key :expected-type (find-class 'message)))
+    (gethash key (slot-value *command-map* 'command-to-line)))
+  (:method ((key message))
+    (gethash (class-of key) (slot-value *command-map* 'command-to-line))))
+(defgeneric (setf command-mapping) (value key)
+  (:method ((value class) (key string))
+    (unless (subtypep value (find-class 'message))
+      (error 'type-error :datum value :expected-type (find-class 'message)))
+    (setf (gethash key (slot-value *command-map* 'line-to-command)) value))
+  (:method ((value string) (key class))
+    (unless (subtypep key (find-class 'message))
+      (error 'type-error :datum key :expected-type (find-class 'message)))
+    (setf (gethash key (slot-value *command-map* 'command-to-line)) value)))
+(defvar *command-map* (make-instance 'command-map))
   
 (defmacro init-message-types (type-list)
     `(progn ,@(mapcan #'init-message-type type-list)))
 
 (init-message-types #.+messages+)
-
-
-

@@ -311,7 +311,7 @@
 			       recipient-string
 			       (when recipient-string ",")
 			       recipient)))
-	  recipients)
+	  (limit-params recipients))
     (make-instance 'cmd-privmsg
 		   :prefix prefix
 		   :params (list recipient-string)

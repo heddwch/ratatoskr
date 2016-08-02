@@ -193,9 +193,9 @@
   host)
 
 (defclass message ()
-  ((prefix :accessor prefix :initarg :prefix)
-   (params :accessor params :initarg :params)
-   (trailing :accessor trailing :initarg :trailing)))
+  ((prefix :accessor prefix :initarg :prefix :initform nil)
+   (params :accessor params :initarg :params :initform nil)
+   (trailing :accessor trailing :initarg :trailing :initform nil)))
 
 (defmethod print-object ((object message) stream)
   (print `(make-instance ',(class-name (class-of object))

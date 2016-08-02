@@ -2,6 +2,7 @@
 
 (define-condition malformed-message (error) ())
 
+;Command utility functions/macros
 (defun targmax (object)
   (or (gethash (let ((class (etypecase object
 			      (class object)
@@ -55,6 +56,7 @@
 	 target-list)
     target-string))
 
+;Commands
 (defun cmd-pass (password)
   (declare
    (type string password))
@@ -467,3 +469,12 @@
   (make-instance 'cmd-ison
 		 :prefix prefix
 		 :params (limit-targets 'cmd-ison nicks)))
+
+(defun err-nosuchnick (nick &key prefix)
+  (declare
+   (type string nick)
+   (type (or prefix null) prefix))
+  (make-instance 'err-nosuchnick
+		 :prefix prefix
+		 :params (list nick)
+		 :trailing "No such nick/channel"))

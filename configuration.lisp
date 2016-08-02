@@ -1,10 +1,19 @@
 (in-package :ratatoskr)
 
 (default-targmaxes
-  ((cmd-privmsg . 4)))
+    ((cmd-join . 4)
+     (cmd-part . 4)
+     (cmd-mode . 100)
+     (cmd-names . 1)
+     (cmd-privmsg . 4)
+     (cmd-notice . 4)
+     (cmd-whois . 4)))
+
+(defparameter *targmaxes*
+  (alist-hash-table +default-targmaxes+ :test 'eq))
 
 (defconstant +max-params+ 10)
-(defvar *default-targmax* 4)
+(defvar *targmax* 4)
 (proclaim
  `(type (or (integer 1 ,+max-params+) null) *operands-per-message*))
 

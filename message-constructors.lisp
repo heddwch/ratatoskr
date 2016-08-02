@@ -15,22 +15,35 @@
 	       *targmaxes*)
       1))
 
-(defun limit-params (object list)
+(defun (setf targmax) (value object)
+    (setf (gethash (let ((class (etypecase object
+			      (class object)
+			      (symbol (find-class object))
+			      (message (class-of object)))))
+		 (unless (subtypep class (find-class 'message))
+		   (error 'type-error
+			  :datum class
+			  :expected-type (find-class 'message)))
+		 class)
+		   *targmaxes*)
+     value))
+
+(defun limit-targets (object list)
   (subseq list
 	  0
-	  (min +max-params+ *targmax* (list-length list) (targmax object))))
+	  (min +max-targets+ *targmax* (list-length list) (targmax object))))
 
-(defun sort-params-first (list &key stack-predicate stack-key)
-  (let (with-param without-param)
+(defun sort-targets-first (list &key stack-predicate stack-key)
+  (let (with-target without-target)
     (map 'nil (lambda (pair)
 		(if (cdr pair)
-		    (push pair with-param)
-		    (push pair without-param)))
+		    (push pair with-target)
+		    (push pair without-target)))
 	 list)
     (when stack-predicate
-      (setf with-param (sort with-param stack-predicate :key stack-key))
-      (setf without-param (sort without-param stack-predicate :key stack-key)))
-    (append with-param without-param)))
+      (setf with-target (sort with-target stack-predicate :key stack-key))
+      (setf without-target (sort without-target stack-predicate :key stack-key)))
+    (append with-target without-target)))
 
 (defun build-target-string (target-list)
   (let (target-string)
@@ -111,7 +124,7 @@
 			(key (cdr channel-pair)))
 		    (push channel channel-list)
 		    (when key (push key key-list))))
-	   (nreverse (sort-params-first (limit-params 'cmd-join channel-alist))))
+	   (nreverse (sort-targets-first (limit-targets 'cmd-join channel-alist))))
       (setf channel-string (build-target-string channel-list))
       (setf key-string (build-target-string key-list)))
     (make-instance 'cmd-join
@@ -125,7 +138,7 @@
    (type (or prefix null) prefix))
   (make-instance 'cmd-part
 		 :prefix prefix
-		 :params (list (build-target-string (limit-params 'cmd-part channels)))
+		 :params (list (build-target-string (limit-targets 'cmd-part channels)))
 		 :trailing part-message))
 
 (defun cmd-mode (target mode-alist &key prefix)
@@ -133,7 +146,7 @@
    (type string target)
    (type list mode-alist)
    (type (or prefix null) prefix))
-  (let* ((mode-alist (sort-params-first (limit-params 'cmd-mode mode-alist)
+  (let* ((mode-alist (sort-targets-first (limit-targets 'cmd-mode mode-alist)
 					:stack-predicate (lambda (x1 x2)
 							   (and x1 (not x2)))
 					:stack-key (lambda (pair)
@@ -153,7 +166,7 @@
 		      (concatenate 'string
 				   mode-string
 				   (mode-mode (car pair))))
-		(push (cdr pair)params))
+		(push (cdr pair) params))
 	 mode-alist)
     (make-instance 'cmd-mode
 		   :prefix prefix
@@ -174,7 +187,7 @@
   (declare
    (type (or list null) channels)
    (type (or prefix null) prefix))
-  (let ((channel-string (build-target-string (limit-params 'cmd-names channels))))
+  (let ((channel-string (build-target-string (limit-targets 'cmd-names channels))))
     (make-instance 'cmd-names
 		   :prefix prefix
 		   :params (when channel-string
@@ -188,7 +201,7 @@
   (when server
     (unless channels
       (error 'malformed-message)))
-  (let ((channel-string (build-target-string (limit-params 'cmd-list channels))))
+  (let ((channel-string (build-target-string (limit-targets 'cmd-list channels))))
     (make-instance 'cmd-list
 		   :prefix prefix
 		   :params (append
@@ -297,7 +310,7 @@
    (type (or prefix null) prefix))
   (make-instance 'cmd-privmsg
 		 :prefix prefix
-		 :params (list (build-target-string (limit-params 'cmd-privmsg recipients)))
+		 :params (list (build-target-string (limit-targets 'cmd-privmsg recipients)))
 		 :trailing message))
 
 (defun cmd-notice (recipients message &key prefix)
@@ -307,7 +320,7 @@
    (type (or prefix null) prefix))
   (make-instance 'cmd-notice
 		 :prefix prefix
-		 :params (list (build-target-string (limit-params 'cmd-notice recipients)))
+		 :params (list (build-target-string (limit-targets 'cmd-notice recipients)))
 		 :trailing message))
 
 (defun cmd-who (&key name o prefix)
@@ -336,7 +349,7 @@
 		 :params (append (when server
 				   (list server))
 				 (build-target-string
-				  (limit-params 'cmd-whois nickmasks)))))
+				  (limit-targets 'cmd-whois nickmasks)))))
 
 (defun cmd-whowas (nick &key count server prefix)
   (declare
@@ -443,5 +456,14 @@
     (error 'malformed-message))
   (make-instance 'cmd-userhost
 		 :prefix prefix
-		 :params (limit-params 'cmd-userhost nicks)))
+		 :params (limit-targets 'cmd-userhost nicks)))
 
+(defun cmd-ison (nicks &key prefix)
+  (declare
+   (type list nicks)
+   (type (or prefix null) prefix))
+  (unless (car nicks)
+    (error 'malformed-message))
+  (make-instance 'cmd-ison
+		 :prefix prefix
+		 :params (limit-targets 'cmd-ison nicks)))

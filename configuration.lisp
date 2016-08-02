@@ -8,13 +8,14 @@
      (cmd-privmsg . 4)
      (cmd-notice . 4)
      (cmd-whois . 4)
-     (cmd-userhost . 5)))
+     (cmd-userhost . 5)
+     (cmd-ison . 20)))
 
 (defparameter *targmaxes*
   (alist-hash-table +default-targmaxes+ :test 'eq))
 
-(defconstant +max-params+ 10)
+(defconstant +max-targets+ 10)
 (defvar *targmax* 5)
 (proclaim
- `(type (or (integer 1 ,+max-params+) null) *operands-per-message*))
+ `(type (or (integer 1 ,+max-targets+) null) *targmax*))
 

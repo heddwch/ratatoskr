@@ -337,3 +337,111 @@
 				   (list server))
 				 (build-target-string
 				  (limit-params 'cmd-whois nickmasks)))))
+
+(defun cmd-whowas (nick &key count server prefix)
+  (declare
+   (type string nick)
+   (type (or string number null) count)
+   (type (or string null) server)
+   (type (or prefix null) prefix))
+  (when server
+    (unless count
+      (error 'malformed-message)))
+  (make-instance 'cmd-whowas
+		 :prefix prefix
+		 :params (append (list nick)
+			 (when count (list count))
+			 (when server (list server)))))
+
+(defun cmd-kill (nick comment &key prefix)
+  (declare
+   (type string nick comment)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-kill
+		 :prefix prefix
+		 :params (list nick)
+		 :trailing comment))
+
+(defun cmd-ping (server-1 &key server-2 prefix)
+  (declare
+   (type string server-1)
+   (type (or string null) server-2)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-ping
+		 :prefix prefix
+		 :parameters (append (list server-1)
+				     (when server-2
+				       (list server-2)))))
+
+(defun cmd-pong (daemon &key daemon-2 prefix)
+  (declare
+   (type string daemon)
+   (type (or string null) daemon-2)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-pong
+		 :prefix prefix
+		 :params (append (list daemon)
+				 (when daemon-2
+				   (list daemon-2)))))
+
+(defun cmd-error (message &key prefix)
+  (declare
+   (type string message)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-error
+		 :prefix prefix
+		 :trailing message))
+
+(defun cmd-away (&key message prefix)
+  (declare
+   (type (or string null) message)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-away
+		 :prefix prefix
+		 :trailing (when message
+			     (list message))))
+
+(defun cmd-rehash ()
+  (make-instance 'cmd-rehash))
+
+(defun cmd-restart ()
+  (make-instance 'cmd-restart))
+
+(defun cmd-summon (user &key server prefix)
+  (declare
+   (type string user)
+   (type (or string null) server)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-summon
+		 :prefix prefix
+		 :params (append (list user)
+				 (when server
+				   (list server)))))
+
+(defun cmd-users (&key server prefix)
+  (declare
+   (type (or string null) server)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-users
+		 :prefix prefix
+		 :params (when server
+			   (list server))))
+
+(defun cmd-wallops (message &key prefix)
+  (declare
+   (type string message)
+   (type (or prefix null) prefix))
+  (make-instance 'cmd-wallops
+		 :prefix prefix
+		 :trailing message))
+
+(defun cmd-userhost (nicks &key prefix)
+  (declare
+   (type list nicks)
+   (type (or prefix null) prefix))
+  (unless (car nicks)
+    (error 'malformed-message))
+  (make-instance 'cmd-userhost
+		 :prefix prefix
+		 :params (limit-params 'cmd-userhost nicks)))
+

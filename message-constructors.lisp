@@ -16,17 +16,17 @@
       1))
 
 (defun (setf targmax) (value object)
-    (setf (gethash (let ((class (etypecase object
-			      (class object)
-			      (symbol (find-class object))
-			      (message (class-of object)))))
-		 (unless (subtypep class (find-class 'message))
-		   (error 'type-error
-			  :datum class
-			  :expected-type (find-class 'message)))
-		 class)
-		   *targmaxes*)
-     value))
+  (setf (gethash (let ((class (etypecase object
+				(class object)
+				(symbol (find-class object))
+				(message (class-of object)))))
+		   (unless (subtypep class (find-class 'message))
+		     (error 'type-error
+			    :datum class
+			    :expected-type (find-class 'message)))
+		   class)
+		 *targmaxes*)
+	value))
 
 (defun limit-targets (object list)
   (subseq list
@@ -147,10 +147,10 @@
    (type list mode-alist)
    (type (or prefix null) prefix))
   (let* ((mode-alist (sort-targets-first (limit-targets 'cmd-mode mode-alist)
-					:stack-predicate (lambda (x1 x2)
-							   (and x1 (not x2)))
-					:stack-key (lambda (pair)
-						     (mode-grant (car pair)))))
+					 :stack-predicate (lambda (x1 x2)
+							    (and x1 (not x2)))
+					 :stack-key (lambda (pair)
+						      (mode-grant (car pair)))))
 	 (grant (not (mode-grant (caar mode-alist))))
 	 mode-string
 	 params)
@@ -363,8 +363,8 @@
   (make-instance 'cmd-whowas
 		 :prefix prefix
 		 :params (append (list nick)
-			 (when count (list count))
-			 (when server (list server)))))
+				 (when count (list count))
+				 (when server (list server)))))
 
 (defun cmd-kill (nick comment &key prefix)
   (declare

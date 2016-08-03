@@ -1,8 +1,13 @@
 (in-package :ratatoskr)
 
-(defmacro default-targmaxes (pairs)
-  `(define-constant +default-targmaxes+
-     '(,@(mapcar (lambda (pair)
-		 (cons (find-class (car pair)) (cdr pair)))
-		 pairs))
-     :test #'equalp))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun get-targmax-classes (pairs)
+    (mapcar (lambda (pair)
+	      (cons (find-class (car pair)) (cdr pair)))
+	    pairs)))
+
+(defmacro set-default-targmaxes (&rest pairs)
+  `(defparameter *targmaxes*
+     (alist-hash-table
+      ',(get-targmax-classes pairs)
+      :test 'eq)))

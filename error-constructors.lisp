@@ -1,32 +1,6 @@
 (in-package :ratatoskr)
 
-;Error utility functions/macros
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun define-error-constructor (type message &optional has-arg)
-    (declare
-     (type symbol type)
-     (type string message)
-     (type boolean has-arg))
-    (unless (subtypep (find-class type) (find-class 'message))
-      (error 'type-error :datum (find-class type) :expected-type (find-class 'message)))
-    `(defun ,type (,@(when has-arg '(target)) &key prefix)
-       (declare
-	,@(when has-arg '((type string target)))
-	(type (or prefix null) prefix))
-       (make-instance ',type
-		      :prefix prefix
-		      ,@(when has-arg
-			      '(:params target))
-		      :trailing ,message))))
-
-;Errors
-(defmacro define-error-constructors (&rest err-specs)
-  `(progn
-     ,@(mapcar (lambda (err-spec)
-		 (apply #'define-error-constructor err-spec))
-	       err-specs)))
-
-(define-error-constructors
+(define-simple-reply-constructors
   (err-nosuchnick "No such nick/channel" t)
   (err-nosuchserver "No such server" t)
   (err-nosuchchannel "No such channel" t)
@@ -47,9 +21,9 @@
   (err-erroneusnickname "Erroneous nickname" t)
   (err-nicknameinuse "Nickname is already in use" t)
   (err-nickcollision "Nickname collision KILL" t)
-; (defun err-usernotinchannel (nick channel &key prefix) …)
+  (err-usernotinchannel "They aren't on that channel" 2)
   (err-notonchannel "You're not on that channel" t)
-  )
+  (err-useronchannel "is already on channel" 2))
 
 (defun err-norecipient (command &key prefix)
   (declare
@@ -75,12 +49,3 @@
 					op
 					" on "
 					file)))
-
-(defun err-usernotinchannel (nick channel &key prefix)
-  (declare
-   (type string nick channel)
-   (type (or prefix null) prefix))
-  (make-instance 'err-usernotinchannel
-		 :prefix prefix
-		 :params (list nick channel)
-		 :trailing "They aren't on that channel"))

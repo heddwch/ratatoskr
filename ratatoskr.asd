@@ -14,5 +14,6 @@
 	       (:file "message-types" :depends-on ("package"))
 	       (:file "config-util" :depends-on ("package"))
 	       (:file "configuration" :depends-on ("package" "message-types" "config-util"))
+	       (:file "reply-util" :depends-on ("package" "message-types"))
 	       (:file "error-constructors" :depends-on ("package" "message-types"))
 	       (:file "command-constructors" :depends-on ("message-types" "configuration"))))

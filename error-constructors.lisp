@@ -35,12 +35,20 @@
   (err-wasnosuchnick "There was no such nickname" t)
   (err-toomanytargets "Duplicate recipients. No message delivered" t)
   (err-noorigin "No origin specified")
+; (defun err-norecipient (command &key prefix) …)
   (err-notexttosend "No text to send")
   (err-notoplevel "No toplevel domain specified" t)
   (err-wildtoplevel "Wildcard in toplevel domain" t)
   (err-unknowncommand "Unknown command" t)
   (err-nomotd "MOTD File is missing")
-  (err-noadmininfo "No administrative info available")
+  (err-noadmininfo "No administrative info available" t)
+; (defun err-fileerror (op file &key prefix) …)
+  (err-nonicknamegiven "No nickname given")
+  (err-erroneusnickname "Erroneous nickname" t)
+  (err-nicknameinuse "Nickname is already in use" t)
+  (err-nickcollision "Nickname collision KILL" t)
+; (defun err-usernotinchannel (nick channel &key prefix) …)
+  (err-notonchannel "You're not on that channel" t)
   )
 
 (defun err-norecipient (command &key prefix)
@@ -67,3 +75,12 @@
 					op
 					" on "
 					file)))
+
+(defun err-usernotinchannel (nick channel &key prefix)
+  (declare
+   (type string nick channel)
+   (type (or prefix null) prefix))
+  (make-instance 'err-usernotinchannel
+		 :prefix prefix
+		 :params (list nick channel)
+		 :trailing "They aren't on that channel"))

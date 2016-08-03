@@ -1,39 +1,6 @@
 (in-package :ratatoskr)
 
-(define-condition malformed-message (error) ())
-
 ;Command utility functions/macros
-(defun targmax (object)
-  (or (gethash (let ((class (etypecase object
-			      (class object)
-			      (symbol (find-class object))
-			      (message (class-of object)))))
-		 (unless (subtypep class (find-class 'message))
-		   (error 'type-error
-			  :datum class
-			  :expected-type (find-class 'message)))
-		 class)
-	       *targmaxes*)
-      1))
-
-(defun (setf targmax) (value object)
-  (setf (gethash (let ((class (etypecase object
-				(class object)
-				(symbol (find-class object))
-				(message (class-of object)))))
-		   (unless (subtypep class (find-class 'message))
-		     (error 'type-error
-			    :datum class
-			    :expected-type (find-class 'message)))
-		   class)
-		 *targmaxes*)
-	value))
-
-(defun limit-targets (object list)
-  (subseq list
-	  0
-	  (min +max-targets+ *targmax* (list-length list) (targmax object))))
-
 (defun sort-targets-first (list &key stack-predicate stack-key)
   (let (with-target without-target)
     (map 'nil (lambda (pair)
@@ -45,16 +12,6 @@
       (setf with-target (sort with-target stack-predicate :key stack-key))
       (setf without-target (sort without-target stack-predicate :key stack-key)))
     (append with-target without-target)))
-
-(defun build-target-string (target-list)
-  (let (target-string)
-    (map 'nil (lambda (target)
-		(setf target-string (concatenate 'string
-						 target-string
-						 (when target-string ",")
-						 target)))
-	 target-list)
-    target-string))
 
 ;Commands
 ;--------
@@ -72,9 +29,9 @@
    (type (or string number null) hopcount))
   (make-instance 'cmd-nick
 		 :prefix prefix
-		 :args (append (list nick)
-			       (when hopcount
-				 (list hopcount)))))
+		 :args (if hopcount
+			   (list nick hopcount)
+			   (list nick))))
 
 (defun cmd-user (username realname &key (hostname "bogus-host") (servername "bogus-server") prefix)
   (declare
@@ -118,32 +75,42 @@
 		 :params (list server)
 		 :trailing comment))
 
-(defun cmd-join (channel-alist &key prefix)
+(defun cmd-join (channels &key prefix)
   (declare
-   (type list channel-alist)
+   (type (or list string) channels)
    (type (or prefix null) prefix))
   (let (channel-string key-string)
-    (let (channel-list key-list)
-      (map 'nil (lambda (channel-pair)
-		  (let ((channel (car channel-pair))
-			(key (cdr channel-pair)))
-		    (push channel channel-list)
-		    (when key (push key key-list))))
-	   (nreverse (sort-targets-first (limit-targets 'cmd-join channel-alist))))
-      (setf channel-string (build-target-string channel-list))
-      (setf key-string (build-target-string key-list)))
+    (etypecase channels
+      (list
+       (etypecase (first channels)
+	 (cons
+	  (let (channel-list key-list)
+	    (map 'nil (lambda (channel-pair)
+			(let ((channel (car channel-pair))
+			      (key (cdr channel-pair)))
+			  (push channel channel-list)
+			  (when key (push key key-list))))
+		 (nreverse (sort-targets-first (limit-targets 'cmd-join channels))))
+	    (setf channel-string (build-list-string channel-list))
+	    (setf key-string (build-list-string key-list))))
+	 (string
+	  (setf channel-string (build-list-string (limit-targets 'cmd-join channels))))))
+      (string
+       (setf channel-string channels)))
     (make-instance 'cmd-join
 		   :prefix prefix
-		   :params (list channel-string key-string))))
+		   :params (if key-string
+			       (list channel-string key-string)
+			       (list channel-string)))))
 
 (defun cmd-part (channels &key part-message prefix)
   (declare
-   (type list channels)
+   (type (or list string) channels)
    (type (or string null) part-message)
    (type (or prefix null) prefix))
   (make-instance 'cmd-part
 		 :prefix prefix
-		 :params (list (build-target-string (limit-targets 'cmd-part channels)))
+		 :params (list (build-list-string (limit-targets 'cmd-part channels)))
 		 :trailing part-message))
 
 (defun cmd-mode (target mode-alist &key prefix)
@@ -190,30 +157,29 @@
 
 (defun cmd-names (&key channels prefix)
   (declare
-   (type (or list null) channels)
+   (type (or list string null) channels)
    (type (or prefix null) prefix))
-  (let ((channel-string (build-target-string (limit-targets 'cmd-names channels))))
+  (let ((channel-string (build-list-string (limit-targets 'cmd-names channels))))
     (make-instance 'cmd-names
 		   :prefix prefix
 		   :params (when channel-string
-			     (list channel-string)))))0
+			     (list channel-string)))))
 
 (defun cmd-list (&key channels server prefix)
   (declare
-   (type (or list null) channels)
+   (type (or list string null) channels)
    (type (or string null) server)
    (type (or prefix null) prefix))
   (when server
     (unless channels
       (error 'malformed-message)))
-  (let ((channel-string (build-target-string (limit-targets 'cmd-list channels))))
+  (let ((channel-string (build-list-string (limit-targets 'cmd-list channels))))
     (make-instance 'cmd-list
 		   :prefix prefix
-		   :params (append
-			    (when channel-string
-			      (list channel-string))
-			    (when server
-			      (list server))))))
+		   :params (when channel-string
+			     (if server
+				 (list channel-string server)
+				 (list channel-string))))))
 
 (defun cmd-invite (nickname channel &key prefix)
   (declare
@@ -249,8 +215,9 @@
    (type (or prefix null) prefix))
   (make-instance 'cmd-stats
 		 :prefix prefix
-		 :params (append (list query)
-				 (when server (list server)))))
+		 :params (if server
+			     (list query server)
+			     (list query))))
 
 (defun cmd-links (&key server server-mask prefix)
   (declare
@@ -280,9 +247,11 @@
       (error 'malformed-message)))
   (make-instance 'cmd-connect
 		 :prefix prefix
-		 :params (append (list server)
-				 (when port (list port))
-				 (when remote (list remote)))))
+		 :params (if port
+			     (if remote
+				 (list server port remote)
+				 (list server port))
+			     (list server))))
 
 (defun cmd-trace (&key server-mask prefix)
   (declare
@@ -310,22 +279,22 @@
 
 (defun cmd-privmsg (recipients message &key prefix)
   (declare
-   (type list recipients)
+   (type (or list string) recipients)
    (type string message)
    (type (or prefix null) prefix))
   (make-instance 'cmd-privmsg
 		 :prefix prefix
-		 :params (list (build-target-string (limit-targets 'cmd-privmsg recipients)))
+		 :params (list (build-list-string (limit-targets 'cmd-privmsg recipients)))
 		 :trailing message))
 
 (defun cmd-notice (recipients message &key prefix)
   (declare
-   (type list recipients)
+   (type (or list string) recipients)
    (type string message)
    (type (or prefix null) prefix))
   (make-instance 'cmd-notice
 		 :prefix prefix
-		 :params (list (build-target-string (limit-targets 'cmd-notice recipients)))
+		 :params (list (build-list-string (limit-targets 'cmd-notice recipients)))
 		 :trailing message))
 
 (defun cmd-who (&key name o prefix)
@@ -337,24 +306,24 @@
   (make-instance 'cmd-who
 		 :prefix prefix
 		 :params (when name
-			   (append (list name)
-				   (when o
-				     (list "o"))))))
+			   (if o
+			       (list name "o")
+			       (list name)))))
 
 (defun cmd-whois (nickmasks &key server prefix)
   (declare
-   (type list nickmasks)
+   (type (or list string) nickmasks)
    (type (or string null) server)
    (type (or prefix null) prefix))
   (when server
     (unless nickmasks
       (error 'malformed-message)))
-  (make-instance 'cmd-whois
+  (let ((target-string (build-list-string (limit-targets 'cmd-whois nickmasks))))
+    (make-instance 'cmd-whois
 		 :prefix prefix
-		 :params (append (when server
-				   (list server))
-				 (build-target-string
-				  (limit-targets 'cmd-whois nickmasks)))))
+		 :params (if server
+			     (list server target-string)
+			     (list target-string)))))
 
 (defun cmd-whowas (nick &key count server prefix)
   (declare
@@ -367,9 +336,11 @@
       (error 'malformed-message)))
   (make-instance 'cmd-whowas
 		 :prefix prefix
-		 :params (append (list nick)
-				 (when count (list count))
-				 (when server (list server)))))
+		 :params (if count
+			     (if server
+				 (list nick count server)
+				 (list nick count))
+			     (list nick))))
 
 (defun cmd-kill (nick comment &key prefix)
   (declare
@@ -387,9 +358,9 @@
    (type (or prefix null) prefix))
   (make-instance 'cmd-ping
 		 :prefix prefix
-		 :parameters (append (list server-1)
-				     (when server-2
-				       (list server-2)))))
+		 :parameters (if server-2
+				 (list server-1 server-2)
+				 (list server-1))))
 
 (defun cmd-pong (daemon &key daemon-2 prefix)
   (declare
@@ -398,9 +369,9 @@
    (type (or prefix null) prefix))
   (make-instance 'cmd-pong
 		 :prefix prefix
-		 :params (append (list daemon)
-				 (when daemon-2
-				   (list daemon-2)))))
+		 :params (if daemon-2
+			     (list daemon daemon-2)
+			     (list daemon))))
 
 (defun cmd-error (message &key prefix)
   (declare
@@ -432,9 +403,9 @@
    (type (or prefix null) prefix))
   (make-instance 'cmd-summon
 		 :prefix prefix
-		 :params (append (list user)
-				 (when server
-				   (list server)))))
+		 :params (if server
+			     (list user server)
+			     (list user))))
 
 (defun cmd-users (&key server prefix)
   (declare

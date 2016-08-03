@@ -70,6 +70,8 @@
   `(progn ,@(mapcan #'init-message-type types)))
 
 (init-message-types
+;RFC 1459
+;-------- 
  PASS
  NICK
  USER

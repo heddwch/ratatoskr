@@ -57,6 +57,9 @@
     target-string))
 
 ;Commands
+;--------
+;RFC 1459
+;--------
 (defun cmd-pass (password)
   (declare
    (type string password))

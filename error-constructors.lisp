@@ -1,6 +1,9 @@
 (in-package :ratatoskr)
 
+;Simple errors
 (define-simple-reply-constructors
+;RFC 1459
+;--------
   (err-nosuchnick "No such nick/channel" t)
   (err-nosuchserver "No such server" t)
   (err-nosuchchannel "No such channel" t)
@@ -25,6 +28,10 @@
   (err-notonchannel "You're not on that channel" t)
   (err-useronchannel "is already on channel" 2))
 
+;Specialized errors
+;------------------
+;RFC 1459
+;--------
 (defun err-norecipient (command &key prefix)
   (declare
    (type (or string symbol class message) command)

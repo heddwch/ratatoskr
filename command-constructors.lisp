@@ -2,26 +2,20 @@
 
 ;Command utility functions/macros
 (defun arg-to-sorted-pairs (parameters &key stack-predicate stack-key)
-  (typecase parameters
-    (list
-     (typecase (car parameters)
-       (list
-	(let (with-target without-target)
-	  (dolist (pair parameters)
-	    (typecase pair
-	      (cons
-	       (if (cdr pair)
-		   (push pair with-target)
-		   (push pair without-target)))
-	      (t
-	       (push (cons pair nil) without-target))))
-	  (when stack-predicate
-	    (setf with-target (sort with-target stack-predicate :key stack-key))
-	    (setf without-target (sort without-target stack-predicate :key stack-key)))
-	  (append with-target without-target)))
-       (t (list parameters))))
-    (t
-     (list (cons parameters nil)))))
+  (let (with-target without-target)
+    (dolist (pair parameters)
+      (typecase pair
+	(cons
+	 (if (cdr pair)
+	     (push pair with-target)
+	     (push pair without-target)))
+	(t
+	 (push (cons pair nil) without-target))))
+    (when stack-predicate
+      (setf with-target (sort with-target stack-predicate :key stack-key))
+      (setf without-target (sort without-target stack-predicate :key stack-key)))
+    (append with-target without-target)))
+
 
 ;Commands
 ;--------

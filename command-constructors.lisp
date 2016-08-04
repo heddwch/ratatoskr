@@ -1,7 +1,7 @@
 (in-package :ratatoskr)
 
 ;Command utility functions/macros
-(defun sort-targets-first (parameters &key stack-predicate stack-key)
+(defun arg-to-sorted-pairs (parameters &key stack-predicate stack-key)
   (typecase parameters
     (list
      (typecase (car parameters)
@@ -96,7 +96,7 @@
 			(key (cdr channel-pair)))
 		    (push channel channel-list)
 		    (when key (push key key-list))))
-	   (nreverse (sort-targets-first (limit-targets 'cmd-join channels))))
+	   (nreverse (arg-to-sorted-pairs (limit-targets 'cmd-join channels))))
       (setf channel-string (build-list-string channel-list))
       (setf key-string (build-list-string key-list)))
     (make-instance 'cmd-join
@@ -120,7 +120,7 @@
    (type string target)
    (type (or list mode) modes)
    (type (or prefix null) prefix))
-  (let* ((mode-alist (sort-targets-first (limit-targets 'cmd-mode modes)
+  (let* ((mode-alist (arg-to-sorted-pairs (limit-targets 'cmd-mode modes)
 					 :stack-predicate (lambda (x1 x2)
 							    (and x1 (not x2)))
 					 :stack-key (lambda (pair)

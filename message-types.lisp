@@ -33,7 +33,9 @@
 				 `(:trailing ',(trailing object))))
 	 stream))
 
-(defstruct mode grant mode)
+(defstruct mode
+  grant
+  mode)
 
 (defclass command-map ()
   ((line-to-command :initform (make-hash-table :test 'equalp))

@@ -1,17 +1,27 @@
 (in-package :ratatoskr)
 
 ;Command utility functions/macros
-(defun sort-targets-first (list &key stack-predicate stack-key)
-  (let (with-target without-target)
-    (map 'nil (lambda (pair)
-		(if (cdr pair)
-		    (push pair with-target)
-		    (push pair without-target)))
-	 list)
-    (when stack-predicate
-      (setf with-target (sort with-target stack-predicate :key stack-key))
-      (setf without-target (sort without-target stack-predicate :key stack-key)))
-    (append with-target without-target)))
+(defun sort-targets-first (parameters &key stack-predicate stack-key)
+  (typecase parameters
+    (list
+     (typecase (car parameters)
+       (list
+	(let (with-target without-target)
+	  (dolist (pair parameters)
+	    (typecase pair
+	      (cons
+	       (if (cdr pair)
+		   (push pair with-target)
+		   (push pair without-target)))
+	      (t
+	       (push (cons pair nil) without-target))))
+	  (when stack-predicate
+	    (setf with-target (sort with-target stack-predicate :key stack-key))
+	    (setf without-target (sort without-target stack-predicate :key stack-key)))
+	  (append with-target without-target)))
+       (t (list parameters))))
+    (t
+     (list (cons parameters nil)))))
 
 ;Commands
 ;--------
@@ -80,23 +90,15 @@
    (type (or list string) channels)
    (type (or prefix null) prefix))
   (let (channel-string key-string)
-    (etypecase channels
-      (list
-       (etypecase (first channels)
-	 (cons
-	  (let (channel-list key-list)
-	    (map 'nil (lambda (channel-pair)
-			(let ((channel (car channel-pair))
-			      (key (cdr channel-pair)))
-			  (push channel channel-list)
-			  (when key (push key key-list))))
-		 (nreverse (sort-targets-first (limit-targets 'cmd-join channels))))
-	    (setf channel-string (build-list-string channel-list))
-	    (setf key-string (build-list-string key-list))))
-	 (string
-	  (setf channel-string (build-list-string (limit-targets 'cmd-join channels))))))
-      (string
-       (setf channel-string channels)))
+    (let (channel-list key-list)
+      (map 'nil (lambda (channel-pair)
+		  (let ((channel (car channel-pair))
+			(key (cdr channel-pair)))
+		    (push channel channel-list)
+		    (when key (push key key-list))))
+	   (nreverse (sort-targets-first (limit-targets 'cmd-join channels))))
+      (setf channel-string (build-list-string channel-list))
+      (setf key-string (build-list-string key-list)))
     (make-instance 'cmd-join
 		   :prefix prefix
 		   :params (if key-string
@@ -113,12 +115,12 @@
 		 :params (list (build-list-string (limit-targets 'cmd-part channels)))
 		 :trailing part-message))
 
-(defun cmd-mode (target mode-alist &key prefix)
+(defun cmd-mode (target modes &key prefix)
   (declare
    (type string target)
-   (type list mode-alist)
+   (type (or list mode) modes)
    (type (or prefix null) prefix))
-  (let* ((mode-alist (sort-targets-first (limit-targets 'cmd-mode mode-alist)
+  (let* ((mode-alist (sort-targets-first (limit-targets 'cmd-mode modes)
 					 :stack-predicate (lambda (x1 x2)
 							    (and x1 (not x2)))
 					 :stack-key (lambda (pair)
@@ -127,18 +129,20 @@
 	 mode-string
 	 params)
     (map 'nil (lambda (pair)
-		(let ((new-grant (mode-grant (car pair))))
+		(let* ((mode (car pair))
+		       (new-grant (mode-grant mode)))
 		  (when (not (equalp grant new-grant))
 		    (setf mode-string
 			  (concatenate 'string
 				       mode-string
 				       (if new-grant "+" "-")))
-		    (setf grant new-grant)))
-		(setf mode-string
-		      (concatenate 'string
-				   mode-string
-				   (mode-mode (car pair))))
-		(push (cdr pair) params))
+		    (setf grant new-grant))
+		  (setf mode-string
+			(concatenate 'string
+				     mode-string
+				     (mode-mode mode)))
+		  (when (cdr pair)
+		    (push (cdr pair) params))))
 	 mode-alist)
     (make-instance 'cmd-mode
 		   :prefix prefix

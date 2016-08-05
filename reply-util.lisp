@@ -42,3 +42,11 @@
 	       "="
 	       (if (userhost-away userhost) "-" "+")
 	       (userhost-host userhost)))
+
+(defun whois-channel-string (channel)
+  (declare
+   (type whois-channel channel))
+  (concatenate 'string
+	       (when (whois-channel-op channel) "@")
+	       (when (whois-channel-voice channel) "+")
+	       (whois-channel-channel channel)))

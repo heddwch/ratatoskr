@@ -5,9 +5,19 @@
 (define-simple-reply-constructors
 ;RFC 1459
 ;--------
-    (rpl-none "This shouldn't have happened.")
-;   (defun rpl-userhost (replies &key prefix) …)
-    )
+  (rpl-none "This shouldn't have happened.")
+; (defun rpl-userhost (replies &key prefix) …)
+; (defun rpl-ison (nicks &key prefix) …)
+; (defun rpl-away (nick message &key prefix) …)
+  (rpl-unaway "You are no longer marked as being away")
+  (rpl-nowaway "You have been marked as being away")
+; (defun rpl-whoisuser (nick user host name &key prefix) …)
+; (defun rpl-whoisserver (nick server server-info &key prefix) …)
+  (rpl-whoisoperator "is an IRC operator" t)
+; (defun rpl-whoisidle (nick seconds &key prefix) …)
+  (rpl-endofwhois "End of /WHOIS list" t)
+; (defun rpl-whoischannels (nick channels &key prefix) …)
+  )
 
 ;Specialized replies
 ;-------------------
@@ -22,4 +32,63 @@
 		 :trailing (build-list-string
 			    (mapcar #'userhost-string
 				    (limit-targets 'cmd-userhost replies))
+			    :delimiter #\Space)))
+
+(defun rpl-ison (nicks &key prefix)
+  (declare
+   (type (or list string) nicks)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-ison
+		 :prefix prefix
+		 :trailing (build-list-string (limit-targets 'cmd-ison nicks)
+					      :delimiter #\Space)))
+
+(defun rpl-away (nick message &key prefix)
+  (declare
+   (type string nick message)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-away
+		 :prefix prefix
+		 :params (list nick)
+		 :trailing message))
+
+(defun rpl-whoisuser (nick user host name &key prefix)
+  (declare
+   (type string nick user host name)
+   (type (or prefix null prefix)))
+  (make-instance 'rpl-whoisuser
+		 :prefix prefix
+		 :params (list nick user host "*")
+		 :trailing name))
+
+(defun rpl-whoisserver (nick server server-info &key prefix)
+  (declare
+   (type string nick server server-info)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-whoisserver
+		 :prefix prefix
+		 :params (list nick server)
+		 :trailing server-info))
+
+(defun rpl-whoisidle (nick seconds &key prefix)
+  (declare
+   (type string nick)
+   (type (or string number) seconds)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-whoisidle
+		 :prefix prefix
+		 :params (list nick seconds)
+		 :trailing "seconds idle"))
+
+(defun rpl-whoischannels (nick channels &key prefix)
+  (declare
+   (type string nick)
+   (type list channels)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-whoischannels
+		 :prefix prefix
+		 :params (list nick)
+		 :trailing (build-list-string
+			    (mapcar #'whois-channel-string
+				    channels)
 			    :delimiter #\Space)))

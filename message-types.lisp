@@ -37,6 +37,12 @@
   grant
   mode)
 
+(defstruct userhost
+  nick
+  oper
+  away
+  host)
+
 (defclass command-map ()
   ((line-to-command :initform (make-hash-table :test 'equalp))
    (command-to-line :initform (make-hash-table :test 'eq))))

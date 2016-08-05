@@ -19,9 +19,7 @@
    (type (or prefix null) prefix))
   (make-instance 'rpl-userhost
 		 :prefix prefix
-		 :trailing (etypecase replies
-			     (list
-			      (build-list-string
-			       (mapcan #'userhost-string
-				       (limit-targets 'cmd-userhost replies))
-			       :delimiter #\Space)))))
+		 :trailing (build-list-string
+			    (mapcar #'userhost-string
+				    (limit-targets 'cmd-userhost replies))
+			    :delimiter #\Space)))

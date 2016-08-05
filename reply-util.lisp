@@ -34,3 +34,11 @@
      ,@(mapcar (lambda (reply-spec)
 		 (apply #'define-simple-reply-constructor reply-spec))
 	       reply-specs)))
+
+(defun userhost-string (userhost)
+  (concatenate 'string
+	       (userhost-nick userhost)
+	       (when (userhost-oper userhost) "*")
+	       "="
+	       (if (userhost-away userhost) "-" "+")
+	       (userhost-host userhost)))

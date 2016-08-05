@@ -17,6 +17,17 @@
 ; (defun rpl-whoisidle (nick seconds &key prefix) …)
   (rpl-endofwhois "End of /WHOIS list" t)
 ; (defun rpl-whoischannels (nick channels &key prefix) …)
+; (defun rpl-whowasuser (nick user host name &key prefix)
+  (rpl-endofwhowas "End of WHOWAS" t)
+; (defun rpl-liststart (&key prefix) …)
+; (defun rpl-list (channel population topic &key prefix) …)
+  (rpl-listend "End of /LIST")
+; (defun rpl-channelmodeis (channel modes &key mode-params prefix) …)
+  (rpl-notopic "No topic is set" t)
+; (defun rpl-topic (channel topic &key prefix) …)
+; (defun rpl-inviting (channel nick &key prefix) …)
+  (rpl-summoning "Summoning user to IRC" t)
+
   )
 
 ;Specialized replies
@@ -92,3 +103,78 @@
 			    (mapcar #'whois-channel-string
 				    channels)
 			    :delimiter #\Space)))
+
+(defun rpl-whowasuser (nick user host name &key prefix)
+  (declare
+   (type string nick user host name)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-whowasuser
+		 :prefix prefix
+		 :params (list nick user host "*")
+		 :trailing name))
+
+(defun rpl-liststart (&key prefix)
+  (declare
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-liststart
+		 :prefix prefix
+		 :params (list "Channel")
+		 :trailing ":Users  Name"))
+
+(defun rpl-list (channel population topic &key prefix)
+  (declare
+   (type string channel)
+   (type (or string number) population)
+   (type (or string null) topic)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-list
+		 :prefix prefix
+		 :params (list channel population)
+		 :trailing topic))
+
+(defun rpl-channelmodeis (channel modes &key mode-params prefix)
+  (declare
+   (type string channel modes)
+   (type (or list null) mode-params)
+   (type (or prefix null) prefix))
+  (let ((params (list channel
+		      (concatenate 'string
+				   "+"
+				   modes))))
+    (make-instance 'rpl-channelmodeis
+		   :prefix prefix
+		   :params (if mode-params
+			       (append params
+				       mode-params)
+			       params))))
+
+(defun rpl-topic (channel topic &key prefix)
+  (declare
+   (type string channel topic)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-topic
+		 :prefix prefix
+		 :params (list channel)
+		 :trailing topic))
+
+(defun rpl-inviting (channel nick &key prefix)
+  (declare
+   (type string channel nick)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-inviting
+		 :prefix prefix
+		 :params (list channel nick)))
+
+(defun rpl-version (version debuglevel server comments &key prefix)
+  (declare
+   (type string version server comments)
+   (type (or string null) debuglevel)
+   (type (or prefix null) prefix))
+  (make-instance 'rpl-version
+		 :prefix prefix
+		 :params (list (concatenate 'string
+					    version
+					    "."
+					    debuglevel)
+			       server)
+		 :trailing comments))

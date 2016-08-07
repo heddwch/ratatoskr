@@ -14,7 +14,7 @@
 	(etypecase args
 	  (boolean
 	   (setf params (list 'target)))
-	  (number
+	  (integer
 	   (let ((*gensym-counter* 0))
 	     (dotimes (n args)
 	       (push (gensym "target-0") params)))

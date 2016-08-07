@@ -30,7 +30,7 @@
   (declare
    (type string nick)
    (type (or prefix null) prefix)
-   (type (or string number null) hopcount))
+   (type (or string integer null) hopcount))
   (make-instance 'cmd-nick
 		 :prefix prefix
 		 :args (if hopcount
@@ -51,7 +51,7 @@
 (defun cmd-server (servername hopcount info &key prefix)
   (declare
    (type string servername info)
-   (type (or string number) hopcount)
+   (type (or string integer) hopcount)
    (type (or prefix null) prefix))
   (make-instance 'cmd-server
 		 :prefix prefix
@@ -237,7 +237,7 @@
 (defun cmd-connect (server &key port remote prefix)
   (declare
    (type string server)
-   (type (or string number null) port)
+   (type (or string integer null) port)
    (type (or string null) remote)
    (type (or prefix null) prefix))
   (when remote
@@ -326,7 +326,7 @@
 (defun cmd-whowas (nick &key count server prefix)
   (declare
    (type string nick)
-   (type (or string number null) count)
+   (type (or string integer null) count)
    (type (or string null) server)
    (type (or prefix null) prefix))
   (when server

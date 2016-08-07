@@ -84,7 +84,7 @@
 (defun rpl-whoisidle (nick seconds &key prefix)
   (declare
    (type string nick)
-   (type (or string number) seconds)
+   (type (or string integer) seconds)
    (type (or prefix null) prefix))
   (make-instance 'rpl-whoisidle
 		 :prefix prefix
@@ -124,7 +124,7 @@
 (defun rpl-list (channel population topic &key prefix)
   (declare
    (type string channel)
-   (type (or string number) population)
+   (type (or string integer) population)
    (type (or string null) topic)
    (type (or prefix null) prefix))
   (make-instance 'rpl-list

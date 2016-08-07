@@ -53,12 +53,14 @@
 ;------------------
 ;RFC 1459
 ;--------
-(defun err-norecipient (command &key prefix)
+(defun err-norecipient (target command &key prefix)
   (declare
+   (type string target)
    (type (or string symbol class message) command)
    (type (or prefix null) prefix))
   (make-instance 'err-norecipient
 		 :prefix prefix
+		 :params (list target)
 		 :trailing (concatenate 'string
 					"No recipient given ("
 					(etypecase command
@@ -66,12 +68,13 @@
 					  (string command))
 					")")))
 
-(defun err-fileerror (op file &key prefix)
+(defun err-fileerror (target op file &key prefix)
   (declare
-   (type string op file)
+   (type string target op file)
    (type (or prefix null) prefix))
   (make-instance 'err-fileerror
 		 :prefix prefix
+		 :params (list target)
 		 :trailing (concatenate 'string
 					"File error doing "
 					op

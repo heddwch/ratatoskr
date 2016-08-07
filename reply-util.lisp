@@ -13,20 +13,20 @@
       (when args
 	(etypecase args
 	  (boolean
-	   (setf params (list 'target)))
+	   (setf params (list 'param)))
 	  (integer
 	   (let ((*gensym-counter* 0))
 	     (dotimes (n args)
-	       (push (gensym "target-0") params)))
+	       (push (gensym "param-") params)))
 	   (nreversef params))))
-      `(defun ,type (,@params &key prefix)
+      `(defun ,type (target ,@params &key prefix)
 	 (declare
 	  ,@(when args `((type string ,@params)))
 	  (type (or prefix null) prefix))
 	 (make-instance ',type
 			:prefix prefix
-			,@(when args
-				`(:params (list ,@params)))
+			:params (list target
+				      ,@(when args params))
 			:trailing ,message)))))
 
 (defmacro define-simple-reply-constructors (&rest reply-specs)
